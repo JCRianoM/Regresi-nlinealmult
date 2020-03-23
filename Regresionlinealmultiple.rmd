@@ -295,7 +295,7 @@ Col1 <- c('$$SC_{reg} = \\sum_{i=1}^n(\\hat y_{i} - \\bar y_{i})^{2}$$',
           '$$SC_{res} = \\sum_{i=1}^n(y_{i}- \\hat y_{i})^{2}$$', 
           '$$Sc_{t} = \\sum_{i=1}^n(y_{i}- \\bar y_{i})^{2}$$' )
 Col2 <- c('$k$', '$n-k-1$', '$n-1$')
-Col3 <- c('$SC_{reg}$', '$SC_{res}$', '...')
+Col3 <- c('$$\\frac {SC_{reg}}{k}$$', '$$\\frac {SC_{res}}{n-k-1}$$', '...')
 Col4 <- c('...', '...', '$F_{fisher}$')
 
 tabAnvref <- data.frame(Col1, Col2, Col3, Col4, row.names = RownAv)
