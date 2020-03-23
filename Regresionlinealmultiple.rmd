@@ -1,0 +1,393 @@
+---
+title: 'Regresión Lineal Múltiple Taller # 2'
+author: "Julián Camilo Riaño Moreno"
+date: "22/3/2020"
+output:
+  pdf_document: default
+  html_document: default
+  keep_tex: yes
+  word_document: default
+  fig_cap: yes
+header-includes:
+- \usepackage{float}
+- \floatplacement{figure}{H}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.pos= "h")
+```
+```{r, include=FALSE}
+options(tinytex.verbose = TRUE)
+```
+---
+
+```{r librerías requeridas para desarrollo de la actividad, include=FALSE}
+library(ggplot2)
+library(dplyr)
+library(ggthemes)
+library(GGally)
+library(ppcor)
+library(psych)
+library(gridExtra)
+```
+
+```{r función para modificación de gráfico UPPER en correlaciones, include=FALSE}
+##función para poner los colores de 'ggcorr' a 'ggpair'
+my_fnUPP <- function(data, mapping, method="p", use="pairwise", ...){
+    # grab data
+    x <- eval_data_col(data, mapping$x)
+    y <- eval_data_col(data, mapping$y)
+    
+    # calculate correlation
+    corr <- cor(x, y, method=method, use=use)
+    
+    # calculate colour based on correlation value
+    # Here I have set a correlation of minus one to blue, 
+    # zero to white, and one to red 
+    # Change this to suit: possibly extend to add as an argument of `my_fn`
+    colFn <- colorRampPalette(c("blue", "white", "red"), interpolate ='spline')
+    fill <- colFn(100)[findInterval(corr, seq(-1, 1, length=100))]
+    
+    ggally_cor(data = data, mapping = mapping, ...) + 
+        theme_void() +
+        theme(panel.background = element_rect(fill=fill))
+}
+
+```
+
+```{r función para modificación de gráfico DIAG en correlaciones, include=FALSE}
+##Función para adicionar a un histograma con una curva normal en 'diag' ggpairs
+diag_fun <- function(data, mapping, hist=list(), ...){
+    
+    X = eval_data_col(data, mapping$x)
+    mn = mean(X)
+    s = sd(X)
+    
+    ggplot(data, mapping) + 
+        do.call(function(...) geom_histogram(aes(y =..density..), ...), hist) +
+        stat_function(fun = dnorm, args = list(mean = mn, sd = s), ...)
+}
+
+```
+
+```{r función para modificación de gráfico LOWER en correlaciones, include=FALSE}
+##Función modificar LOWER en Correlaciones
+my_fnLOW <- function(data, mapping, ...){
+    p <- ggplot(data = data, mapping = mapping) + 
+        geom_point(size = .7) + 
+        geom_smooth(method=loess, fill="red", color="red", ...) +
+        geom_smooth(method=lm, fill="blue", color="blue", ...)
+    p
+}
+
+```
+
+```{r Exploración de los datos, include=FALSE, echo=FALSE}
+Athl <- read.csv2('Atletas.csv', header = TRUE)
+colnames(Athl)
+colnames(Athl) <- c('masa_c_magra_%', 'Estatura_cm', 'Peso_kg', 'ContGR_M_mm3')
+colnames(Athl)
+class(Athl)
+classvar <- sapply(Athl, class)
+```
+
+
+# Actividad: desarrollo de taller # 2 (Regresión lineal múltiple)
+En el archivo adjunto denominado atletas.xls se encuentran los datos de 98
+mujeres atletas de élite que fueron entrenadas en el Instituto Australiano del
+Deporte. El objetivo del análisis de este conjunto de datos es explicar el 
+comportamiento de la masa corporal magra (lbm) a partir de la estatura en centímetros
+(ht), el peso en kilogramos (wt) y el conteo de glóbulos rojos (rcc).
+
+
+1. Haga un análisis descriptivo del conjunto de datos, es decir, construya
+diagramas de dispersión de cada variable explicativa con la variable respuesta. 
+las correlaciones simples y parciales entre las variables.Comente.
+
+```{r correlaciones a través del metodo de pearson, echo = FALSE}
+CorPAthl <- as.data.frame(cor(x = Athl, method = "pearson"))
+
+knitr::kable(CorPAthl, 
+             caption = 'Coeficiente de correlación de Pearson para las variables dadas', 
+             digits = 3, align = 'c')
+```
+
+Se aplicó un coeficiente de correlación de Pearson dado que las variables dadas ('masa_c_magra_%', 'Estatura_cm', 'Peso_kg', 'ContGR_M_mm3') son cuantitativas continuas. Los resultados son mostrados en la Tabla 1. Desde estos resultados se puede afirmar que la variable regresora 'Peso_kg' es la que mayor correlación (0.939) tiene con la variable respuesta 'masa_c_magra_%', seguida de la variable 'Estatura_cm' (0.711). Incluso, es posible una mediana correlación entre ellas ('Peso_kg'y 'Estatura_cm' = 0.715). Por otra parte, la variable regresora 'ContGR_M_mm3', tiene escasa correlación tanto con, las variable respuesta como las otras variables regresoras. 
+
+```{r Código para diagrama de dispresión y correlaciones, include = FALSE, message=FALSE}
+### Esta produce con colores de ggcorr + introducción de una curva de normalidad en
+#'diag'. 
+GraphCORR <- ggpairs(Athl, 
+                    #title = 'Diagrama de dispresión y correlaciones',
+                    axisLabels = 'show', 
+                    legends = FALSE,
+                    upper = list(continuous = my_fnUPP), 
+                    diag = list(continuous = wrap(diag_fun,
+                                                  hist=list(fill="grey83",
+                                                            colour="black"), 
+                                                  colour="black", lwd=.7, lty=2)),
+                    lower = list(continuous = my_fnLOW)) +
+                    theme(
+                    plot.title = element_text(size = 12, 
+                                              face = "bold", 
+                                              hjust = 0.5, 
+                                              vjust=2.5),
+        )
+
+```
+
+### Diagrama de dispersión y correlaciones simples y parciales
+```{r Impresión de diagrama de dispersión y correlaciones, echo = FALSE, message=FALSE, fig.cap= 'Gráfica de dispersión y correlaciones. En las cuadrículas inferiores a la izquierda muestran los gráficos de dispersion. La lineas azules corresponde al modelo de regresión lineal (método: `lm`). La linea roja corresponde a la correlación local método: `loess`. Las cuadriculas superiores a la derecha muestran los coeficientes de correlación entre las variables. Los colores corresponden a un mapa de calor que muestra en rojo la máxima correlación y en blanco la mínima correlación. En la cuadricual diagonal se muestran la distribución de las variables en gráfico de histograma y densidad'}
+GraphCORR
+```
+
+Se elaboró una gráfica con los diagramas de dispersion, distribuciones y correlaciones de y entre las variables dadas (Figura 1). Como se puede observar todas las variables tiene una distribución normal, sin embargo, la variable 'ContGR_M_mm3' presenta una distribución sesgada levemente a la derecha. Los diagramas dispersión mostrados muestran dos tipos de correlaciones, por una parte, las lineas rojas corresponde a una distribución local entre las variables y la linea azul corresponde a la linea regresora del modelo de regresión aplicado. Las lineas de correlación parcial y la correlación del modelo se sobre ponen entre la variable 'masa_c_magra_%' (respuesta) y la variable 'Peso_kg' (regresora), lo que soporta que la mayor correlación entre variables se da entre estas dos. Por otra parte, las gráficas muestras que la variable 'ContGR_M_mm3' es la que mayor dispersión presenta con respecto a las otros variables y las lineas correlación y regresión son menos consistentes y muestran mayores desviaciones (sobra roja). 
+
+
+2. Ajuste un modelo de regresión lineal múltiple que relacione la masa corpo-
+ral magra (lbm) con la estatura en centímetros (ht), el peso en kilogramos
+(wt) y el conteo de glóbulos rojos (rcc).
+
+### Análisis del modelo de regresión múltiple
+
+
+```{r Modelo de regresión lineal, echo=FALSE, message=FALSE}
+#colnames('masa_c_magra_%', 'Estatura_cm', 'Peso_kg', 'ContGR_M/mm3')
+modelAthl <- lm(`masa_c_magra_%` ~ `Estatura_cm`
+                + `Peso_kg`
+                + `ContGR_M_mm3`, data=Athl)
+Mod_resAthl <- summary(modelAthl)
+ParMod_resAth <- data.frame(Mod_resAthl$coefficients)
+rownames(ParMod_resAth) <- c("$\\beta_0$", "$\\beta_1$", "$\\beta_2$", "$\\beta_3$")
+colnames(ParMod_resAth) <- c("Estimado", "ErrorStand", "t-value", "p-value")
+ParMod_resAth1 <- ParMod_resAth[c("Estimado", "ErrorStand")]
+knitr::kable(ParMod_resAth1, 
+             caption = 'Estimaciones de parametros de la regresión', 
+             digits = 3)
+
+```
+
+ 
+Los parametros de las tablas mostradas para el análisis del modelo serán mostradas en forma de $\beta_i$ donde $i$ corresponde a cada una de las variables dadas. 
+
+* $\beta_0$: corresponde a la variable respuesta ('masa_c_magra_%').
+* $\beta_1$: corresponde a la variable regresora ('Estatura_cm').
+* $\beta_2$: corresponde a la variable regresora ('Peso_kg').
+* $\beta_3$: corresponde a la variable regresora ('ContGR_M_mm3').
+
+Los resultados mostrados en la tabla 2 para las estimaciones del modelo, muestran un intercepto ($\beta_0$) con valor $< 0$, de manera que, *no tiene sentido práctico* realizar una interpretación de los resultados ya que solo son interpretables los resultados con $\beta_0 > 0$. 
+
+
+```{r linealidad para todos los predictores, echo = FALSE, message = FALSE, fig.cap= 'Gráfica de distribución de los residuos para cada variable regresora'}
+
+plot2 <- ggplot(data = Athl, aes(`Estatura_cm`, Mod_resAthl$residuals)) +
+    geom_point() + geom_smooth(color = "firebrick") + geom_hline(yintercept = 0) +
+    theme_bw() + ylab('Residuales')
+plot3 <- ggplot(data = Athl, aes(`Peso_kg`, Mod_resAthl$residuals)) +
+    geom_point() + geom_smooth(color = "firebrick") + geom_hline(yintercept = 0) +
+    theme_bw() + ylab('Residuales')
+plot4 <- ggplot(data = Athl, aes(`ContGR_M_mm3`, Mod_resAthl$residuals)) +
+    geom_point() + geom_smooth(color = "firebrick") + geom_hline(yintercept = 0) +
+    theme_bw() + ylab('Residuales')
+grid.arrange(plot2, plot3, plot4)
+
+```
+
+Se realizó un diagrama de dispersion (figura 2) para los *"residuales"* del modelo con el objetivo de ver su distribución, en este caso los residuos deben de distribuirse aleatoriamente en torno a 0 con una variabilidad constante a lo largo del eje X. Como se observa la dispersión de los residuos es mayor para el $\beta_3$ ('ContGR_M_mm3') con lo cual se puede considerar que puede aportar menos en la regresión. 
+
+```{r t-values y p-values, echo=FALSE}
+tvalAth <- ParMod_resAth[c("t-value", "p-value")]
+colnames(tvalAth) <- c("$t-value$", "$p-value$")
+rownames(ParMod_resAth) <- c("$\\beta_0$", "$\\beta_1$", "$\\beta_2$", "$\\beta_3$")
+knitr::kable(tvalAth, caption = paste('$t-values$', 'para los parametros dados'), digits = c(3, 5))
+
+```
+
+A partir de la tabla 3 es posible deducir que los estimadores de variables regresoras $\beta_1$ ('Estatura_cm') y $\beta_3$ ('ContGR_M_mm3'), no son significativos ($p - value \geq 0.05$) en el modelo de regresión. No obstante, se reconoce la variable $\beta_2$ ('Peso_kg') como significativa ($p - value < 0.05$). Por lo tanto, en caso que se requiera una interpretación del modelo, sería posible 
+asumir que existe una correlación lineal entre esta variable y la variable respuesta, donde se podría afirmar que un incremento en una unidad de el Peso (en Kg) se puede incrementar en 0.566 el % de masa corporal, siempre que las otras dos variables no cambien. 
+
+
+3. La masa corporal magra depende del peso del atleta?
+
+Según el análisis realizado antes acerca de los $t-values$ y sus respectivos $p-values$ y en caso que se requiera una interpretación entendiendo que $\beta_0 < 0$, entonces, es posible afirmar que existe  dependencia de la masa corporal magra del peso del atleta, en cuanto que $\beta_2$ ('Peso_kg') estimado es 0.566 con un $t-value$ de 17.945 ($p - value < 0.05$). 
+
+4. La masa corporal magra depende de la estatura del atleta?
+
+Según el análisis realizado antes acerca de los $t-values$ y sus respectivos $p-values$ y en caso que se requiera una interpretación entendiendo que $\beta_0 < 0$, entonces, es posible afirmar que NO existe  dependencia de la masa corporal magra conteo dde la estatura del atleta, en cuanto que $\beta_1$ ('ContGR_M_mm3') estimado es 0.068 con un $t-value$ de 1.660 ($p - value \geq 0.05$) no significativo. 
+
+5. La masa corporal magra depende del conteo de glóbulos rojos del atleta?
+
+Según el análisis realizado antes acerca de los $t-values$ y sus respectivos $p-values$ y en caso que se requiera una interpretación entendiendo que $\beta_0 < 0$, entonces, es posible afirmar que NO existe  dependencia de la masa corporal magra del conteo de glóbulos rojos del atleta, en cuanto que $\beta_3$ ('ContGR_M_mm3') estimado es 1.425 con un $t-value$ de 1.925 ($p - value \geq 0.05$) no significativo. 
+
+
+
+6. Construya la tabla de análisis de varianza, y pruebe la signifícancia de la
+regresión.
+
+
+
+### Análisis de varianzas y significancia de la regresión ($F_{global}$: $F$ de Fisher)
+
+```{r construcción de tabla de ANOVA, echo = FALSE, include= FALSE}
+
+###construcción de tabla de varianzas (ANOVA)
+
+head(Athl)
+#matriz 1s
+unos_1 <- rep(1, nrow(Athl))
+### matriz xi para los datos Athl
+xiAthl <- Athl[,-1]
+### definiendo matriz de unos y Xi
+XiAthl_un <- as.matrix(cbind(unos_1, Athl[,-1]))
+    
+## matriz xi para los datos Athl
+yiAthl <- as.matrix((Athl[1]))
+
+###Precisiones acerca de la tabla de ANOVA para trabajo. 
+##Suma de cuadrado total (SCT)
+SCT_1 <- sum((yiAthl - mean(yiAthl))^2)
+
+##Grados de libertad
+dfSCT <- (nrow(Athl))-1
+
+##Suma de cuadrados de la regresión(SCreg)
+yiAthl_hat <- fitted.values(modelAthl)
+SCReg_1 <- sum((yiAthl_hat - mean(yiAthl))^2)
+
+##Grados de libertad
+dfReg <- nrow(Athl)
+
+##Suma de cuadrados de residual (SCres)
+SCRes_1 <- sum((yiAthl - yiAthl_hat)^2)
+
+##Grados de libertad
+dfRes <- (nrow(Athl) - (ncol(xiAthl)) - 1)
+
+## Suma de SCReg + SCRes = SCT
+SCReg_1+SCRes_1
+
+## F de Fisher
+F0 = (SCReg_1/(ncol(xiAthl)))/(SCRes_1/((nrow(Athl) - (ncol(xiAthl)) - 1)))
+
+##Creando tabla de ANOVA para la suma de cuadrados
+ColnAV <- c('Suma_cuadrados', 'Grados_de_libertad', 'Cuadrados_medios', '$F_{global}$')
+RownAv <- c('Regresión', 'Residuales', 'Total')
+Col1 <- c(SCReg_1, SCRes_1, SCT_1)
+Col2 <- c(dfReg, dfRes, dfSCT)
+Col3 <- c(rbind(Col1[-3]/Col2[-3]), NaN)
+Col4 <- c(NaN, NaN, F0)
+
+tabAnv <- data.frame(Col1, Col2, Col3, Col4, row.names = RownAv)
+tabAnv
+colnames(tabAnv) <- ColnAV
+tablANVr <- round(tabAnv, digits = 3)
+tablANVr[is.na(tablANVr)] <- '...'
+tablANVr
+
+```
+
+
+```{r desarrollo de tabla de referencia ANOVA suma de cuadrados, echo = FALSE, include = FALSE}
+
+ColnAVref <- c('Suma_cuadrados', 'Grados_de_libertad', 'Cuadrados_medios', '$F_{global}$')
+RownAvref <- c('Regresión', 'Residuales', 'Total')
+Col1 <- c('$$SC_{reg} = \\sum_{i=1}^n(\\hat y_{i} - \\bar y_{i})^{2}$$', 
+          '$$SC_{res} = \\sum_{i=1}^n(y_{i}- \\hat y_{i})^{2}$$', 
+          '$$Sc_{t} = \\sum_{i=1}^n(y_{i}- \\bar y_{i})^{2}$$' )
+Col2 <- c('$k$', '$n-k-1$', '$n-1$')
+Col3 <- c('$SC_{reg}$', '$SC_{res}$', '...')
+Col4 <- c('...', '...', '$F_{fisher}$')
+
+tabAnvref <- data.frame(Col1, Col2, Col3, Col4, row.names = RownAv)
+tabAnvref
+
+colnames(tabAnvref) <- ColnAV
+tabAnvref[is.na(tabAnvref)] <- '...'
+
+```
+
+
+
+```{r insertar tabla de Anova creada en chunk anterior, echo = FALSE, message = FALSE}
+knitr::kable(tabAnvref, align = 'c', caption = 'Tabla ANOVA para suma de cuadrados de referencia')
+
+knitr::kable(tablANVr,  align = 'r', caption = 'Tabla ANOVA para suma de cuadrados obtenidos por el modelo')
+```
+
+### Comparación $F$ de Fisher y prueba de hipotesis
+
+```{r comparación r obtenido manualmente y r del resumen (summary), echo = FALSE}
+R_2compVect <- c(Mod_resAthl$fstatistic[1], F0, Mod_resAthl$fstatistic[3], '< 2.2e-16')
+R_2comp <- data.frame(matrix(nrow = 1, data = R_2compVect))
+colnames(R_2comp) <- c('$F_{summary}$', '$F_{global}$', 'Grados_libertad', '$p-value$')
+
+knitr::kable(R_2comp, caption = 'Comparación entre estadistico $F$ de Fisher manual y obtenido con la función `summary`', align = 'r')
+
+```
+
+Se realizo una tabla de varianza (ANOVA) de manera manual a través de las indicaciones dadas en clase (tabla 5) para la suma de cuadrados obtenidos de la regresión ($SC_{reg}$), los residuales ($SC_{res}$) y la suma de cuadrados total ($SC_{t}$) (los parametros pueden ser revisados en la tabla 6). A partir de estos resultados se puede encontrar que la ($SC_{reg} \approx SC_{t}$). Lo que sugiere que el modelo tiene *buen ajuste* y puede explicar la variabilidad de la variable respuesta $\beta_0$ identificada, sin tener en cuenta las variables regresoras. 
+
+Además se plantea una prueba de hipotesis global de la siguiente manera: 
+
+
+$$
+H_o: \beta_1 = \beta_2 =  ... =\beta_k = 0 \\
+$$
+
+$$
+H_1: \beta_j \neq 0 \ para \ cualquier  \ j \ dado
+$$
+
+
+Para hacer la prueba de hipotesis se utilizó el estadístico $F$ de Fisher con 94 grados de libertad. Los calculos se obtuvieron manualmente $F_{global}$ y a través de la función `summary` ($F_{summary}$) Se compararon los resultados de $f$ obtenidos donde $F_{global} = F_{summary}$ (ver tabla 6). Al obtener el $p-value$ se encuentra alta significancia estadística, con lo que se rechaza la hipotesis nula. De tal forma, se puede afirmar que almenos una de la variables regresoras ($\beta_i$) son diferentes de 0. Con los resultados provenientes del análisis de correlación y el modelo de regresión podemos afirmar que la variable regresora más probable es 'Peso_kg' ($\beta_2$).
+
+
+7. Calcular $R^2$ y $R_{adj}^2$ para este modelo. Interprete los resultados.
+
+```{r Tabla de r2 y  r2 adj, echo = FALSE}
+R_2vect <-c(Mod_resAthl$r.squared, Mod_resAthl$adj.r.squared)
+NamesR2 <- c('$R^2$', '$R_{adj}^2$')
+R_2modtab <- data.frame(matrix(nrow = 1,data = R_2vect))
+colnames(R_2modtab) <- NamesR2
+
+knitr::kable(R_2modtab, caption = '$R^2$ y $R_{adj}^2$ para el modelo')
+```
+
+La tabla 6. muestra los $R^2$ y $R_{adj}^2$ para el modelo de regresión aplicado. Estos resultados ($R^2 \approx R_{adj}^2$), permiten proponer que aproximadamente el 88% de la variabilidad de la variable respuesta ('masa_c_magra_%') puede ser explicado por las variables regresoras en el modelo; de manera que, la variabilidad restante puede ser consecuencia a otras variables no tenidas encuenta en el modelo o por azar. 
+
+8. Determinar un intervalo de confíanza de 95% para los paráametros del
+modelo.
+
+```{r Coeficientes de confianza, echo = FALSE}
+
+IntvalCf<- as.data.frame(confint(modelAthl, level = 0.95)) ##por defecto es 95%. 
+colnames(IntvalCf) <- c("IC 2.5%", "IC 97.5%")
+rownames(IntvalCf) <- c("$\\beta_0$", "$\\beta_1$", "$\\beta_2$", "$\\beta_3$")
+knitr::kable(IntvalCf, caption = 'Intervalos de confianza para los parametros de 95%', digits = 3)
+
+```
+
+
+
+9.  Un intervalo de confíanza de 95% para la masa corporal magra
+promedio de una atleta cuya estatura es 180 cms, con un peso de 78
+kilogramos y un conteo de globulos rojos de 4.50 (millones de glóobulos
+rojos por microlitro de sangre).
+
+```{r Determinar un intervalo de confíanza para caso dado, echo=FALSE}
+C_LMM_medios <- predict(modelAthl, data.frame(`Estatura_cm`=180, 
+                                              `Peso_kg`=78, 
+                                              `ContGR_M_mm3` =4.5), 
+                        interval="confidence")
+C_LMM_mediosT <- data.frame(matrix(nrow = 1,data = C_LMM_medios))
+colnames(C_LMM_mediosT) <- c('Ajuste', 'IC 2.5%', 'IC 97.5%')
+
+knitr::kable(C_LMM_mediosT, caption = 'Predicción de intervalos de confianza para el caso dado', digits = 3)
+```
+
+
+
+
+
+
+
