@@ -369,7 +369,6 @@ summary {
 </div>
 
 
-<hr />
 <div id="actividad-desarrollo-de-taller-2-regresión-lineal-múltiple" class="section level1">
 <h1>Actividad: desarrollo de taller # 2 (Regresión lineal múltiple)</h1>
 <p>En el archivo adjunto denominado atletas.xls se encuentran los datos de 98 mujeres atletas de élite que fueron entrenadas en el Instituto Australiano del Deporte. El objetivo del análisis de este conjunto de datos es explicar el comportamiento de la masa corporal magra (lbm) a partir de la estatura en centímetros (ht), el peso en kilogramos (wt) y el conteo de glóbulos rojos (rcc).</p>
@@ -707,6 +706,107 @@ H_1: \beta_j \neq 0 \ para \ cualquier  \ j \ dado
 </tr>
 </tbody>
 </table>
+</div>
+</div>
+<div id="anexo" class="section level1">
+<h1>Anexo</h1>
+<div id="ejercicio-realizado-con-dos-variables-excluyendo-variable-contgr_m_mm3" class="section level2">
+<h2>Ejercicio realizado con dos variables excluyendo variable <code>ContGR_M_mm3</code></h2>
+<p>Se realizó un análisis independiente del modelo excluyendo la variable que menor correlación (figura 1) presentó en el caso anterior (<code>ContGR_M_mm3</code>). Se planteó un modelo con dos variables regresoras y una variable respuesta (‘masa_c_magra_%’ = Variable respuesta; ‘Estatura_cm’ y ‘Peso_kg’ = Variables regresora) con la finalidad de probar el mejor modelo para el caso dado.</p>
+<table>
+<caption>Estimaciones de parametros de la regresión para dos variables regresoras</caption>
+<thead>
+<tr class="header">
+<th></th>
+<th align="right">Estimado</th>
+<th align="right">ErrorStand</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><span class="math inline">\(\beta_0\)</span></td>
+<td align="right">4.913</td>
+<td align="right">5.965</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(\beta_1\)</span></td>
+<td align="right">0.068</td>
+<td align="right">0.042</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(\beta_2\)</span></td>
+<td align="right">0.567</td>
+<td align="right">0.032</td>
+</tr>
+</tbody>
+</table>
+<table>
+<caption><span class="math inline">\(t-values\)</span> para los parametros dados</caption>
+<thead>
+<tr class="header">
+<th></th>
+<th align="right"><span class="math inline">\(t-value\)</span></th>
+<th align="right"><span class="math inline">\(p-value\)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><span class="math inline">\(\beta_0\)</span></td>
+<td align="right">0.824</td>
+<td align="right">0.41225</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(\beta_1\)</span></td>
+<td align="right">1.637</td>
+<td align="right">0.10504</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(\beta_2\)</span></td>
+<td align="right">17.724</td>
+<td align="right">0.00000</td>
+</tr>
+</tbody>
+</table>
+<p>Al aplicar el modelo y como se evidencia en la tabla 10. el valor de <span class="math inline">\(\beta_0\)</span> en este caso es positivo <span class="math inline">\(&gt; 0\)</span>, de manera que se puede realizar una interpretación práctica de los resultados de las pendiente en este caso. No obstante, en la tabla 11. se evidencia que la variable 1 (<code>Estatura_cm</code> (<span class="math inline">\(\beta_1\)</span>)) no es presenta signifancia estadistica para el modelo con un <span class="math inline">\(p-value \geq 0\)</span> (0.10504). De manera que la interpretación que se podría obtener proviene de la variables regresora 2 (<code>Peso_kg</code> (<span class="math inline">\(\beta_2\)</span>)). El resultado de la pendiente es 0.567 con significancia <span class="math inline">\(p-value &lt; 0\)</span>, por lo tanto, es posible afirmar que el incremento de una unidad de peso en kg en los atletas incrementaría la masa muscular magra en 0.567 veces en el caso que las demás variables no cambiaran.</p>
+<ol start="7" style="list-style-type: decimal">
+<li>Calcular <span class="math inline">\(R^2\)</span> y <span class="math inline">\(R_{adj}^2\)</span> para este modelo. Interprete los resultados. 0.8861215 0.8852922 0.8828773</li>
+</ol>
+<table>
+<caption><span class="math inline">\(R^2\)</span> y <span class="math inline">\(R_{adj}^2\)</span> para el modelo</caption>
+<thead>
+<tr class="header">
+<th align="right"><span class="math inline">\(R^2\)</span></th>
+<th align="right"><span class="math inline">\(R_{adj}^2\)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">0.8852922</td>
+<td align="right">0.8828773</td>
+</tr>
+</tbody>
+</table>
+<p>Al estimar de este modelo de dos variables regresoras, el <span class="math inline">\(R_{adj}^2\)</span> (tabla 12), es menor que el <span class="math inline">\(R_{adj}^2\)</span> obtenido en el modelo del caso propuesto con tres variables regresoras. De manera, que el primer modelamiento realizado tiene mayor probabilidad de explicar la variabilidad de la <span class="math inline">\(\beta_0\)</span> que el modelo de dos variables anexo. En este caso el <span class="math inline">\(R^2\)</span> no ajustado no puede servir como una medida para explicar la variabilidad dado que esté se estimador se puede ver afectado por el número de variables introducidas.</p>
+<p>Para reconocer evaluar el mejor modelo de regresión para las variables dadas, se realizó una estratégia <em>stepwise</em> a través de la función <code>step</code> que utiliza un modelo matemático Akaike (AIC) para valorar los diferentes modelos. El resultado obtenido (ver abajo) evidencia que el mejor modelo en este caso es el que corresponde a uno de 3 variables regresoras que fue el primero realizado en esta actividad.</p>
+<div id="modelo-stepwise-mixto-para-evaluación-de-modelo-de-regresión-lineal-múltiple." class="section level3">
+<h3>Modelo stepwise mixto para evaluación de modelo de regresión lineal múltiple.</h3>
+<pre><code>## Start:  AIC=172.16
+## `masa_c_magra_%` ~ Estatura_cm + Peso_kg + ContGR_M_mm3
+## 
+##                Df Sum of Sq     RSS    AIC
+## &lt;none&gt;                       523.24 172.16
+## - Estatura_cm   1     15.34  538.58 172.99
+## - ContGR_M_mm3  1     20.63  543.87 173.95
+## - Peso_kg       1   1792.50 2315.74 315.93</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = `masa_c_magra_%` ~ Estatura_cm + Peso_kg + ContGR_M_mm3, 
+##     data = Athl)
+## 
+## Coefficients:
+##  (Intercept)   Estatura_cm       Peso_kg  ContGR_M_mm3  
+##     -1.30797       0.06848       0.56637       1.42480</code></pre>
+</div>
 </div>
 </div>
 

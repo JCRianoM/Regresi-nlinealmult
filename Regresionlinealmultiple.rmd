@@ -19,7 +19,6 @@ knitr::opts_chunk$set(echo = TRUE, fig.pos= "h")
 ```{r, include=FALSE}
 options(tinytex.verbose = TRUE)
 ```
----
 
 ```{r librerías requeridas para desarrollo de la actividad, include=FALSE}
 library(ggplot2)
@@ -114,7 +113,7 @@ knitr::kable(CorPAthl,
 
 Se aplicó un coeficiente de correlación de Pearson dado que las variables dadas ('masa_c_magra_%', 'Estatura_cm', 'Peso_kg', 'ContGR_M_mm3') son cuantitativas continuas. Los resultados son mostrados en la Tabla 1. Desde estos resultados se puede afirmar que la variable regresora 'Peso_kg' es la que mayor correlación (0.939) tiene con la variable respuesta 'masa_c_magra_%', seguida de la variable 'Estatura_cm' (0.711). Incluso, es posible una mediana correlación entre ellas ('Peso_kg'y 'Estatura_cm' = 0.715). Por otra parte, la variable regresora 'ContGR_M_mm3', tiene escasa correlación tanto con, las variable respuesta como las otras variables regresoras. 
 
-```{r Código para diagrama de dispresión y correlaciones, include = FALSE, message=FALSE}
+```{r Código para diagrama de dispresión y correlaciones, message=FALSE, include=FALSE}
 ### Esta produce con colores de ggcorr + introducción de una curva de normalidad en
 #'diag'. 
 GraphCORR <- ggpairs(Athl, 
@@ -209,7 +208,7 @@ asumir que existe una correlación lineal entre esta variable y la variable resp
 
 3. La masa corporal magra depende del peso del atleta?
 
-Según el análisis realizado antes acerca de los $t-values$ y sus respectivos $p-values$ y en caso que se requiera una interpretación entendiendo que $\beta_0 < 0$, entonces, es posible afirmar que existe  dependencia de la masa corporal magra del peso del atleta, en cuanto que $\beta_2$ ('Peso_kg') estimado es 0.566 con un $t-value$ de 17.945 ($p - value < 0.05$). 
+Según el análisis realizado antes acerca de los $t-values$ y sus respectivos $p-values$ y en caso que se requiera una interpretación entendiendo que $\beta_0 < 0$, entonces, es posible afirmar que existe  dependencia de la masa corporal magra del peso del atleta, en cuanto que $\beta_2$ (`Peso_kg`) estimado es 0.566 con un $t-value$ de 17.945 ($p - value < 0.05$). 
 
 4. La masa corporal magra depende de la estatura del atleta?
 
@@ -385,9 +384,68 @@ colnames(C_LMM_mediosT) <- c('Ajuste', 'IC 2.5%', 'IC 97.5%')
 knitr::kable(C_LMM_mediosT, caption = 'Predicción de intervalos de confianza para el caso dado', digits = 3)
 ```
 
+# Anexo
+
+
+## Ejercicio realizado con dos variables excluyendo variable `ContGR_M_mm3`
+
+
+```{r Ajuste de los datos al un modelo con dos variables regresoras, include=FALSE, echo=FALSE}
+Athl2 <- Athl[-4]
+colnames(Athl2)
+colnames(Athl2) <- c('masa_c_magra_%', 'Estatura_cm', 'Peso_kg')
+colnames(Athl2)
+class(Athl2)
+classvar <- sapply(Athl2, class)
+```
+
+Se realizó un análisis independiente del modelo excluyendo la variable que menor correlación (figura 1) presentó en el caso anterior (`ContGR_M_mm3`). Se planteó un modelo con dos variables regresoras y una variable respuesta ('masa_c_magra_%' = Variable respuesta; 'Estatura_cm' y 'Peso_kg' = Variables regresora) con la finalidad de probar el mejor modelo para el caso dado. 
 
 
 
+```{r Modelo de regresión lineal para dos variables, echo=FALSE, message=FALSE}
+#colnames('masa_c_magra_%', 'Estatura_cm', 'Peso_kg', 'ContGR_M/mm3')
+modelAthl2 <- lm(`masa_c_magra_%` ~ `Estatura_cm`
+                + `Peso_kg`, data=Athl2)
+Mod_resAthl2 <- summary(modelAthl2)
+ParMod_resAth2 <- data.frame(Mod_resAthl2$coefficients)
+rownames(ParMod_resAth2) <- c("$\\beta_0$", "$\\beta_1$", "$\\beta_2$")
+colnames(ParMod_resAth2) <- c("Estimado", "ErrorStand", "t-value", "p-value")
+ParMod_resAth_2 <- ParMod_resAth2[c("Estimado", "ErrorStand")]
+knitr::kable(ParMod_resAth_2, 
+             caption = 'Estimaciones de parametros de la regresión para dos variables regresoras', 
+             digits = 3)
 
+```
 
+```{r t-values y p-values para dos variables, echo = FALSE}
+tvalAth2 <- ParMod_resAth2[c("t-value", "p-value")]
+colnames(tvalAth2) <- c("$t-value$", "$p-value$")
+rownames(ParMod_resAth2) <- c("$\\beta_0$", "$\\beta_1$", "$\\beta_2$")
+knitr::kable(tvalAth2, caption = paste('$t-values$', 'para los parametros dados'), digits = c(3, 5))
+
+```
+
+Al aplicar el modelo y como se evidencia en la tabla 10. el valor de $\beta_0$ en este caso es positivo $> 0$, de manera que se puede realizar una interpretación práctica de los resultados de las pendiente en este caso. No obstante, en la tabla 11. se evidencia que la variable 1 (`Estatura_cm` ($\beta_1$)) no es presenta signifancia estadistica para el modelo con un $p-value \geq 0$ (0.10504). De manera que la interpretación que se podría obtener proviene de la variables regresora 2 (`Peso_kg` ($\beta_2$)). El resultado de la pendiente es 0.567 con significancia $p-value < 0$, por lo tanto, es posible afirmar que el incremento de una unidad de peso en kg en los atletas incrementaría la masa muscular magra en 0.567 veces en el caso que las demás variables no cambiaran. 
+
+7. Calcular $R^2$ y $R_{adj}^2$ para este modelo. Interprete los resultados. 0.8861215 0.8852922	0.8828773
+
+```{r Tabla de r2 y  r2 adj para modelo de dos variables, echo = FALSE}
+R_2vect_2 <-c(Mod_resAthl2$r.squared, Mod_resAthl2$adj.r.squared)
+NamesR2 <- c('$R^2$', '$R_{adj}^2$')
+R_2modtab_2 <- data.frame(matrix(nrow = 1,data = R_2vect_2))
+colnames(R_2modtab_2) <- NamesR2
+
+knitr::kable(R_2modtab_2, caption = '$R^2$ y $R_{adj}^2$ para el modelo')
+```
+
+Al estimar de este modelo de dos variables regresoras, el $R_{adj}^2$ (tabla 12), es menor que el $R_{adj}^2$ obtenido en el modelo del caso propuesto con tres variables regresoras. De manera, que el primer modelamiento realizado tiene mayor probabilidad de explicar la variabilidad de la $\beta_0$ que el modelo de dos variables anexo. En este caso el $R^2$ no ajustado no puede servir como una medida para explicar la variabilidad dado que esté se estimador se puede ver afectado por el número de variables introducidas.
+
+Para reconocer evaluar el mejor modelo de regresión para las variables dadas, se realizó una estratégia *stepwise* a través de la función `step` que utiliza un modelo matemático Akaike (AIC) para valorar los diferentes modelos. El resultado obtenido (ver abajo) evidencia que el mejor modelo en este caso es el que corresponde a uno de 3 variables regresoras que fue el primero realizado en esta actividad. 
+
+### Modelo stepwise mixto para evaluación de modelo de regresión lineal múltiple. 
+```{r Selección de modelo por estrategia de stepwise mixto. El valor matemático empleado para determinar la calidad del modelo va a ser Akaike(AIC), echo = FALSE, message=FALSE}
+###Elección de modelo
+step(object = modelAthl, direction = "both", trace = 1)
+    ```
 
