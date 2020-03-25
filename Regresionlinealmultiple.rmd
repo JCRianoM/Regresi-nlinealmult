@@ -255,7 +255,7 @@ yiAthl_hat <- fitted.values(modelAthl)
 SCReg_1 <- sum((yiAthl_hat - mean(yiAthl))^2)
 
 ##Grados de libertad
-dfReg <- nrow(Athl)
+dfReg <- ncol(Athl)-1
 
 ##Suma de cuadrados de residual (SCres)
 SCRes_1 <- sum((yiAthl - yiAthl_hat)^2)
