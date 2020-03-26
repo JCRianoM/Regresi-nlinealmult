@@ -3,8 +3,15 @@ title: 'Regresión Lineal Múltiple Taller # 2'
 author: "Julián Camilo Riaño Moreno"
 date: "22/3/2020"
 output:
-  pdf_document: default
-  html_document: default
+  pdf_document: 
+    toc: yes
+    toc_depth: 3
+    df_print: kable
+  html_document: 
+    keep_md: true
+    toc: yes
+    toc_float: true
+    code_folding: hide
   keep_tex: yes
   word_document: default
   fig_cap: yes
@@ -446,6 +453,8 @@ Para reconocer evaluar el mejor modelo de regresión para las variables dadas, s
 ### Modelo stepwise mixto para evaluación de modelo de regresión lineal múltiple. 
 ```{r Selección de modelo por estrategia de stepwise mixto. El valor matemático empleado para determinar la calidad del modelo va a ser Akaike(AIC), echo = FALSE, message=FALSE}
 ###Elección de modelo
-step(object = modelAthl, direction = "both", trace = 1)
-    ```
+xp <- step(object = modelAthl, direction = "both", trace = 1)
+Xppx <- xp$coefficients
+as.data.frame(Xppx)
+```
 
